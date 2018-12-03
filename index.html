@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>BTTV Browse</title>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootswatch@4.1.3/dist/darkly/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@chgibb/css-spinners@2.2.1/css/spinner/three-quarters.css">
+</head>
+<body ng-app="EmoteBrowseApp">
+    <div class="container py-3" ng-controller="EmoteDisplayController as vm">
+        <form name="searchForm" class="row justify-content-center mb-3" ng-submit="vm.searchChannel(searchForm)" novalidate>
+            <div class="col-12 col-md-6 col-lg-5 col-xl-4">
+                <div class="input-group">
+                    <input type="text" class="form-control" name="channelName" placeholder="Channel name" required autofocus
+                        ng-model="vm.formChannelName"
+                        ng-class="{'is-invalid': ((searchForm.channelName.$dirty && searchForm.channelName.$invalid) || (searchForm.$submitted && searchForm.channelName.$invalid))}">
+
+                    <div class="input-group-append">
+                        <button type="submit" class="btn btn-primary">Search</button>
+                    </div>
+                </div>
+
+                <div class="text-center text-danger small pt-2">
+                    <div ng-show="(searchForm.channelName.$dirty && searchForm.channelName.$invalid) || (searchForm.$submitted && searchForm.channelName.$invalid)">
+                        Channel name is required
+                    </div>
+                    <div ng-show="vm.channelNotFound">
+                        Specified channel name not found
+                    </div>
+                </div>
+            </div>
+        </form>
+
+        <div ng-show="!vm.searchCompleted && searchForm.$submitted" class="text-center py-3">
+            <span class="three-quarters-loader" style="border-color: #375a7f; border-right-color: transparent;"></span>
+        </div>
+        <div ng-show="vm.searchCompleted">
+            <div class="d-flex justify-content-center flex-wrap" ng-show="vm.emotes.length > 0">
+                <div ng-repeat="emote in vm.emotes">
+                    <div class="card card-body p-2 mb-2 mx-1" style="width: 120px;">
+                        <div class="text-center text-monospace">{{ emote.code }}</div>
+                        <div class="border-top border-secondary mt-2 pt-2 text-center">
+                            <img class="img-fluid" ng-src="{{ vm.getImageUrl(vm.urlTemplate, emote.id) }}" alt="{{ emote.id }}">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="text-center" ng-show="vm.emotes.length == 0">
+                No emotes here :(
+            </div>
+        </div>
+
+        <ul class="list-inline text-center small mt-3">
+            <li class="list-inline-item"><a href="https://angularjs.org/">AngularJS</a></li>
+            <li class="list-inline-item"><a href="https://www.nightdev.com/betterttv/">BetterTTV</a></li>
+            <li class="list-inline-item"><a href="https://getbootstrap.com/">Bootstrap</a></li>
+            <li class="list-inline-item"><a href="https://bootswatch.com/">Bootswatch</a></li>
+        </ul>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/angular@1.7.5/angular.min.js"></script>
+    <script src="./script.js"></script>
+</body>
+</html>
