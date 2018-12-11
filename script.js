@@ -34,6 +34,7 @@
                                 type: 'bttv',
                                 code: emote.code,
                                 img: getBttvImageUrl(res.data.urlTemplate, emote.id),
+                                url: null,
                             }))
                         }).catch(() => {
                             return null
@@ -50,6 +51,7 @@
                                     type: 'ffz',
                                     code: emote.name,
                                     img: emote.urls[urlKey],
+                                    url: `https://www.frankerfacez.com/emoticon/${emote.id}`,
                                 }
                             })
                         }).catch(() => {

@@ -47,13 +47,12 @@
                     <div class="card card-body p-2 mb-2 mx-1" style="width: 120px;">
                         <div class="text-center text-monospace">{{ emote.code }}</div>
                         <div class="border-top border-secondary mt-2 pt-2 text-center">
-                            <img class="img-fluid" ng-src="{{ emote.img }}" alt="{{ emote.code }}">
+                            <a ng-href="{{ emote.url }}">
+                                <img class="img-fluid" ng-src="{{ emote.img }}" alt="{{ emote.code }}">
+                            </a>
                         </div>
                         <div class="pt-2 text-center">
-                            <span ng-show="emote.type === 'bttv'" class="badge badge-info">
-                                {{ emote.type.toUpperCase() }}
-                            </span>
-                            <span ng-show="emote.type === 'ffz'" class="badge badge-success">
+                            <span class="badge" ng-class="{'badge-info': (emote.type === 'bttv'), 'badge-success': (emote.type === 'ffz')}">
                                 {{ emote.type.toUpperCase() }}
                             </span>
                         </div>
