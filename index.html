@@ -1,81 +1,148 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="utf-8">
+    <meta charset="utf-8" />
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1, shrink-to-fit=no"
+    />
     <title>BTTV/FFZ Browse</title>
 
-    <link rel="icon" type="image/png" href="./favicon.png">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootswatch@4.1.3/dist/darkly/bootstrap.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@chgibb/css-spinners@2.2.1/css/spinner/three-quarters.css">
+    <link rel="icon" type="image/png" href="./favicon.png" />
+    <link
+        rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/bootswatch@4.4.1/dist/darkly/bootstrap.min.css"
+    />
+    <link
+        rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/@chgibb/css-spinners@2.2.1/css/spinner/three-quarters.css"
+    />
 </head>
-<body ng-app="EmoteBrowseApp">
-    <div class="container py-3" ng-controller="EmoteDisplayController as vm">
-        <form name="searchForm" class="row justify-content-center mb-3" ng-submit="vm.searchChannel(searchForm)" novalidate>
+<body>
+    <div class="container py-3">
+        <form
+            name="searchForm"
+            class="row justify-content-center mb-3"
+            novalidate
+        >
             <div class="col-12 col-md-9 col-lg-7 col-xl-6">
                 <div class="row no-gutters">
                     <div class="col-md-5 pr-md-2 mb-2 mb-md-0">
-                        <input type="text" class="form-control" name="channelName" placeholder="Channel name" required autofocus
-                            ng-model="vm.formChannelName"
-                            ng-class="{'is-invalid': ((searchForm.channelName.$dirty && searchForm.channelName.$invalid) || (searchForm.$submitted && searchForm.channelName.$invalid))}">
+                        <input
+                            type="text"
+                            class="form-control"
+                            name="channelName"
+                            placeholder="Channel name"
+                            required
+                            autofocus
+                        />
                     </div>
                     <div class="col-md-5 pr-md-2 mb-2 mb-md-0">
-                        <select class="form-control" name="emoteType" ng-model="vm.formEmoteType" ng-init="vm.formEmoteType = 'all'">
+                        <select class="form-control" name="emoteType">
                             <option value="all" selected>All</option>
+                            <option value="subs">Subs</option>
                             <option value="ffz">FFZ</option>
                             <option value="bttv">BTTV</option>
                         </select>
                     </div>
                     <div class="col-md-2">
-                        <button type="submit" class="btn btn-primary btn-block">Search</button>
+                        <button
+                            type="submit"
+                            class="btn btn-primary btn-block"
+                        >
+                            Search
+                        </button>
                     </div>
                 </div>
 
-                <div class="text-center text-danger small pt-2">
-                    <div ng-show="(searchForm.channelName.$dirty && searchForm.channelName.$invalid) || (searchForm.$submitted && searchForm.channelName.$invalid)">
-                        Channel name is required
-                    </div>
+                <div
+                    id="search-error"
+                    class="text-center text-danger small pt-2 d-none"
+                >
+                    Channel name is required
                 </div>
             </div>
         </form>
 
-        <div ng-show="!vm.searchCompleted && searchForm.$submitted" class="text-center py-3">
-            <span class="three-quarters-loader" style="border-color: #375a7f; border-right-color: transparent;"></span>
-        </div>
-        <div ng-show="vm.searchCompleted">
-            <div class="d-flex justify-content-center flex-wrap" ng-show="vm.emotes.length > 0">
-                <div ng-repeat="emote in vm.emotes | orderBy: 'code'">
-                    <div class="card card-body p-2 mb-2 mx-1" style="width: 120px;">
-                        <div class="text-center text-monospace">{{ emote.code }}</div>
-                        <div class="border-top border-secondary mt-2 pt-2 text-center">
-                            <a ng-href="{{ emote.url }}">
-                                <img class="img-fluid" ng-src="{{ emote.img }}" alt="{{ emote.code }}">
-                            </a>
-                        </div>
-                        <div class="pt-2 text-center">
-                            <span class="badge" ng-class="{'badge-info': (emote.type === 'bttv'), 'badge-success': (emote.type === 'ffz')}">
-                                {{ emote.type.toUpperCase() }}
-                            </span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="text-center" ng-show="vm.emotes.length === 0">
-                No emotes here :(
-            </div>
+        <div id="search-loading" class="text-center py-3 d-none">
+            <span
+                class="three-quarters-loader"
+                style="border-color: #375a7f; border-right-color: transparent;"
+            ></span>
         </div>
 
-        <ul class="list-inline text-center small mt-3">
-            <li class="list-inline-item"><a href="https://github.com/altbdoor/bttv-ffz-browse">GitHub</a></li>
-            <li class="list-inline-item"><a href="https://angularjs.org/">AngularJS</a></li>
-            <li class="list-inline-item"><a href="https://www.nightdev.com/betterttv/">BetterTTV</a></li>
-            <li class="list-inline-item"><a href="https://www.frankerfacez.com/">FrankerFaceZ</a></li>
-            <li class="list-inline-item"><a href="https://getbootstrap.com/">Bootstrap</a></li>
-            <li class="list-inline-item"><a href="https://bootswatch.com/">Bootswatch</a></li>
-            <li class="list-inline-item"><a href="https://github.com/jlong/css-spinners">CSS Spinners</a></li>
+        <div
+            id="search-content"
+            class="d-flex justify-content-center flex-wrap text-center"
+        ></div>
+
+        <ul class="list-inline text-center small mt-3 mb-2">
+            <li class="list-inline-item">
+                <a href="https://betterttv.com/">BetterTTV</a>
+            </li>
+            <li class="list-inline-item">
+                <a href="https://twitchemotes.com/">Twitch Emotes</a>
+            </li>
+            <li class="list-inline-item">
+                <a href="https://www.frankerfacez.com/">FrankerFaceZ</a>
+            </li>
+        </ul>
+
+        <ul class="list-inline text-center small my-0">
+            <li class="list-inline-item">
+                <a href="https://github.com/altbdoor/bttv-ffz-browse"
+                    >GitHub</a
+                >
+            </li>
+            <li class="list-inline-item">
+                <a href="https://rxjs-dev.firebaseapp.com/">RxJS</a>
+            </li>
+            <li class="list-inline-item">
+                <a href="https://github.com/janl/mustache.js"
+                    >mustache.js</a
+                >
+            </li>
+            <li class="list-inline-item">
+                <a href="https://getbootstrap.com/">Bootstrap</a>
+            </li>
+            <li class="list-inline-item">
+                <a href="https://bootswatch.com/">Bootswatch</a>
+            </li>
+            <li class="list-inline-item">
+                <a href="https://github.com/jlong/css-spinners"
+                    >CSS Spinners</a
+                >
+            </li>
         </ul>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/angular@1.7.5/angular.min.js"></script>
+    <script id="tmpl-emote" type="text/html">
+        {{ #emotes }}
+            <div style="width: 120px;">
+                <div class="card card-body p-2 mb-2 mx-1">
+                    <div class="text-monospace">{{ code }}</div>
+                    <div class="border-top border-secondary mt-2 pt-2 text-center">
+                        <a href="{{ url }}">
+                            <img class="img-fluid" src="{{ img }}" alt="{{ code }}">
+                        </a>
+                    </div>
+                    <div class="pt-2">
+                        <span class="text-uppercase badge {{ badgeClass }}">
+                            {{ type }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        {{ /emotes }}
+        {{ ^emotes }}
+            <div>
+                No emotes here :(
+            </div>
+        {{ /emotes }}
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/rxjs@6.5.4/bundles/rxjs.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mustache@3.2.1/mustache.min.js"></script>
     <script src="./script.js"></script>
 </body>
 </html>

@@ -1,77 +1,140 @@
-((angular, window, document) => {
-    angular.module('EmoteBrowseApp', []).config([
-        '$compileProvider',
-        ($compileProvider) => {
-            $compileProvider.debugInfoEnabled(false)
-            $compileProvider.commentDirectivesEnabled(false)
-            $compileProvider.cssClassDirectivesEnabled(false)
-        }
-    ])
+;((
+    { merge, of, fromEvent, combineLatest },
+    { tap, map, filter, switchMap, catchError, debounceTime, share },
+    { ajax }
+) => {
+    const searchLoading = document.querySelector('#search-loading')
+    const searchContent = document.querySelector('#search-content')
+    const emoteTemplate = document.querySelector('#tmpl-emote').innerHTML
+    Mustache.parse(emoteTemplate)
 
-    .controller('EmoteDisplayController', [
-        '$http', '$q',
-        function($http, $q) {
-            const vm = this
+    const form = document.querySelector('form[name="searchForm"]')
+    const initChannelName = window.location.hash.substr(1)
+    form.elements.channelName.value =
+        form.elements.channelName.value || initChannelName
 
-            vm.emotes = []
-            vm.searchCompleted = false
+    const getBttv = (channelName) =>
+        ajax
+            .getJSON(`https://api.betterttv.net/2/channels/${channelName}`)
+            .pipe(
+                map((data) =>
+                    data.emotes.map((emote) => ({
+                        type: 'bttv',
+                        code: emote.code,
+                        img: data.urlTemplate
+                            .replace('{{image}}', '3x')
+                            .replace('{{id}}', emote.id),
+                        url: `https://betterttv.com/emotes/${emote.id}`,
+                        badgeClass: 'badge-info',
+                    }))
+                ),
+                catchError(() => of([]))
+            )
 
-            vm.searchChannel = searchChannel
+    const getFfzAjax = (channelName) =>
+        ajax
+            .getJSON(`https://api.frankerfacez.com/v1/room/${channelName}`)
+            .pipe(share())
 
-            // =====
+    const getFfz = (source) =>
+        source.pipe(
+            map((data) => {
+                const roomSet = data.room.set
+                return data.sets[roomSet].emoticons.map((emote) => {
+                    const urlKey = Object.keys(emote.urls)
+                        .sort()
+                        .pop()
 
-            function searchChannel(form) {
-                vm.emotes = []
-                vm.searchCompleted = false
-
-                if (form.$valid) {
-                    let bttvPromise = $q.resolve()
-                    let ffzPromise = $q.resolve()
-
-                    if (['all', 'bttv'].indexOf(form.emoteType.$modelValue) !== -1) {
-                        bttvPromise = $http.get(`https://api.betterttv.net/2/channels/${form.channelName.$modelValue}`).then((res) => {
-                            return res.data.emotes.map((emote) => ({
-                                type: 'bttv',
-                                code: emote.code,
-                                img: getBttvImageUrl(res.data.urlTemplate, emote.id),
-                                url: null,
-                            }))
-                        }).catch(() => {
-                            return null
-                        })
+                    return {
+                        type: 'ffz',
+                        code: emote.name,
+                        img: emote.urls[urlKey],
+                        url: `https://www.frankerfacez.com/emoticon/${emote.id}`,
+                        badgeClass: 'badge-success',
                     }
+                })
+            }),
+            catchError(() => of([]))
+        )
 
-                    if (['all', 'ffz'].indexOf(form.emoteType.$modelValue) !== -1) {
-                        ffzPromise = $http.get(`https://api.frankerfacez.com/v1/room/${form.channelName.$modelValue}`).then((res) => {
-                            const roomSet = res.data.room.set
-                            return res.data.sets[roomSet].emoticons.map((emote) => {
-                                const urlKey = Object.keys(emote.urls).sort().pop()
+    const getSubs = (source) =>
+        source.pipe(
+            map((data) => data.room.twitch_id),
+            switchMap((twitchId) =>
+                ajax.getJSON(
+                    `https://api.twitchemotes.com/api/v4/channels/${twitchId}`
+                )
+            ),
+            map((data) =>
+                data.emotes.map((emote) => ({
+                    type: 'subs',
+                    code: emote.code,
+                    img: `https://static-cdn.jtvnw.net/emoticons/v1/${emote.id}/3.0`,
+                    url: `https://twitchemotes.com/emotes/${emote.id}`,
+                    badgeClass: 'badge-danger',
+                }))
+            ),
+            catchError(() => of([]))
+        )
 
-                                return {
-                                    type: 'ffz',
-                                    code: emote.name,
-                                    img: emote.urls[urlKey],
-                                    url: `https://www.frankerfacez.com/emoticon/${emote.id}`,
-                                }
-                            })
-                        }).catch(() => {
-                            return null
-                        })
-                    }
+    const formSubmit = merge(
+        of({
+            channelName: initChannelName,
+            emoteType: form.elements.emoteType.value,
+        }),
+        fromEvent(form, 'submit').pipe(
+            tap((evt) => evt.preventDefault()),
+            map((evt) => evt.target.elements),
+            map(({ channelName, emoteType }) => ({
+                channelName: channelName.value.toLowerCase(),
+                emoteType: emoteType.value,
+            }))
+        )
+    ).pipe(filter((data) => !!data.channelName))
 
-                    $q.all([bttvPromise, ffzPromise]).then((promiseList) => {
-                        vm.emotes = promiseList.filter((data) => data)
-                            .reduce((acc, list) => acc.concat(list), [])
-                    }).finally(() => {
-                        vm.searchCompleted = true
-                    })
-                }
-            }
+    formSubmit
+        .pipe(
+            switchMap(({ channelName, emoteType }) => {
+                const ffzObs = getFfzAjax(channelName)
 
-            function getBttvImageUrl(urlTemplate, imageId) {
-                return urlTemplate.replace('{{image}}', '3x').replace('{{id}}', imageId)
-            }
-        }
-    ])
+                return combineLatest([
+                    ['all', 'bttv'].includes(emoteType)
+                        ? getBttv(channelName)
+                        : of([]),
+                    ['all', 'ffz'].includes(emoteType)
+                        ? getFfz(ffzObs)
+                        : of([]),
+                    ['all', 'subs'].includes(emoteType)
+                        ? getSubs(ffzObs)
+                        : of([]),
+                ])
+            }),
+            map((data) =>
+                data
+                    .flat()
+                    .sort((emoteA, emoteB) =>
+                        emoteA.code.localeCompare(emoteB.code)
+                    )
+            )
+        )
+        .subscribe((emotes) => {
+            searchLoading.classList.add('d-none')
+            const content = Mustache.render(emoteTemplate, { emotes })
+            searchContent.innerHTML = content
+        })
 
-})(angular, window, document)
+    formSubmit.subscribe(() => {
+        searchLoading.classList.remove('d-none')
+        searchContent.innerHTML = ''
+    })
+
+    fromEvent(form.elements.channelName, 'input')
+        .pipe(
+            debounceTime(200),
+            map((evt) => !!evt.target.value)
+        )
+        .subscribe((hasVal) => {
+            const error = document.querySelector('#search-error')
+            error.classList.toggle('d-none', hasVal)
+        })
+})(rxjs, rxjs.operators, rxjs.ajax)
