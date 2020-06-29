@@ -13,28 +13,30 @@
     form.elements.channelName.value =
         form.elements.channelName.value || initChannelName
 
-    const getBttv = (channelName) =>
-        ajax
-            .getJSON(`https://api.betterttv.net/2/channels/${channelName}`)
-            .pipe(
-                map((data) =>
-                    data.emotes.map((emote) => ({
-                        type: 'bttv',
-                        code: emote.code,
-                        img: data.urlTemplate
-                            .replace('{{image}}', '3x')
-                            .replace('{{id}}', emote.id),
-                        url: `https://betterttv.com/emotes/${emote.id}`,
-                        badgeClass: 'badge-info',
-                    }))
-                ),
-                catchError(() => of([]))
-            )
-
     const getFfzAjax = (channelName) =>
         ajax
             .getJSON(`https://api.frankerfacez.com/v1/room/${channelName}`)
             .pipe(share())
+
+    const getBttv = (source) =>
+        source.pipe(
+            map((data) => data.room.twitch_id),
+            switchMap((twitchId) =>
+                ajax.getJSON(
+                    `https://api.betterttv.net/3/cached/users/twitch/${twitchId}`
+                )
+            ),
+            map((data) =>
+                data.channelEmotes.map((emote) => ({
+                    type: 'bttv',
+                    code: emote.code,
+                    img: `https://cdn.betterttv.net/emote/${emote.id}/3x`,
+                    url: `https://betterttv.com/emotes/${emote.id}`,
+                    badgeClass: 'badge-info',
+                }))
+            ),
+            catchError(() => of([]))
+        )
 
     const getFfz = (source) =>
         source.pipe(
@@ -99,7 +101,7 @@
 
                 return combineLatest([
                     ['all', 'bttv'].includes(emoteType)
-                        ? getBttv(channelName)
+                        ? getBttv(ffzObs)
                         : of([]),
                     ['all', 'ffz'].includes(emoteType)
                         ? getFfz(ffzObs)
