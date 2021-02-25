@@ -26,8 +26,9 @@
                     `https://api.betterttv.net/3/cached/users/twitch/${twitchId}`
                 )
             ),
-            map((data) =>
-                data.channelEmotes.map((emote) => ({
+            map((data) => [...data.channelEmotes, ...data.sharedEmotes]),
+            map((emotes) =>
+                emotes.map((emote) => ({
                     type: 'bttv',
                     code: emote.code,
                     img: `https://cdn.betterttv.net/emote/${emote.id}/3x`,
